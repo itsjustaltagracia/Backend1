@@ -1,0 +1,25 @@
+#########################################
+# Listar todos los registros de Hi
+GET http://localhost:3000/api/hi
+Accept: application/json
+
+###
+
+#########################################
+# Crear un nuevo registro en Hi
+POST http://localhost:3000/api/hi
+Content-Type: application/json
+
+{
+  "nombre": "Hola mundo"
+}
+
+###
+
+# Crear otro registro
+POST http://localhost:3000/api/hi
+Content-Type: application/json
+
+{
+  "nombre": "Segundo registro"
+}
