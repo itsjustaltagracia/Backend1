@@ -1,6 +1,6 @@
 // index.js
 const express = require('express');
-const cors = require('cors'); // ✅ CORRECCIÓN: Importación correcta de 'cors'
+const cors = require('cors'); 
 const db = require('./db.js');      // Conexión a la BD (Sequelize)
 const Hi = require('./models/item.js'); // Modelo para la tabla 'hi'
 
@@ -31,12 +31,12 @@ app.get('/api/hi', async (req, res) => {
     }
 });
 
-// 🚀 RUTA GET: /consulta - Para ver los datos agregados (es un alias funcional de /api/hi)
+// 🚀 RUTA GET: /consulta - Para VER los datos agregados
 app.get('/consulta', async (req, res) => {
     try {
         const datosAgregados = await Hi.findAll();
         res.json({
-            mensaje: 'Datos obtenidos de la tabla "hi"',
+            mensaje: 'Datos obtenidos de la tabla "hi" (Consulta GET)',
             data: datosAgregados
         });
     } catch (error) {
@@ -45,25 +45,40 @@ app.get('/consulta', async (req, res) => {
     }
 });
 
-// ✅ RUTA POST: Crear un nuevo registro en la tabla 'hi' (Uso en Postman: /api/hi)
-app.post('/api/hi', async (req, res) => {
+// ✅ RUTA POST: /consulta - Para AGREGAR un nuevo registro (según tu requerimiento)
+app.post('/consulta', async (req, res) => {
     try {
-        const { nombre } = req.body;      // Extrae el campo 'nombre' del cuerpo JSON
+        const { nombre } = req.body;      
         
         if (!nombre) {
             return res.status(400).json({ error: 'El campo "nombre" es obligatorio.' });
         }
         
         const nuevo = await Hi.create({ nombre });
-        res.status(201).json(nuevo); // Retorna el nuevo registro creado
+        res.status(201).json({
+            mensaje: 'Dato agregado exitosamente a la tabla "hi" (Consulta POST)',
+            registro: nuevo
+        });
     } catch (error) {
         console.error('Error al crear registro:', error.message);
         res.status(500).json({ error: 'Error al crear registro', detail: error.message });
     }
 });
 
+
 // ------------------------------------
-// ✅ CONEXIÓN A DB Y LEVANTAMIENTO DEL SERVIDOR
+// ✅ LEVANTAMIENTO DEL SERVIDOR (INMEDIATO)
+// ------------------------------------
+
+// 🚀 Levantamiento del servidor (se abre el puerto de inmediato)
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+    console.log(`URL de prueba (GET/POST): http://localhost:${PORT}/consulta`);
+});
+
+
+// ------------------------------------
+// ✅ CONEXIÓN A DB Y SINCRONIZACIÓN (ASÍNCRONA)
 // ------------------------------------
 
 (async () => {
@@ -72,15 +87,9 @@ app.post('/api/hi', async (req, res) => {
         await db.authenticate();
         console.log('✅ Conexión a la base de datos exitosa');
         
-        // 2. Sincronizar modelos con la DB (crea la tabla si no existe o aplica cambios)
+        // 2. Sincronizar modelos con la DB
         await db.sync({ alter: true }); 
         console.log('✅ Base de datos sincronizada');
-
-        // 3. Levantamiento del servidor
-        app.listen(PORT, () => {
-            console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
-            console.log(`URL de prueba (GET): http://localhost:${PORT}/consulta`);
-        });
     } catch (err) {
         console.error('❌ Error de conexión o sincronización:', err.message);
     }
