@@ -1,21 +1,26 @@
+// index.js
 const express = require('express');
-const cors = require('require');
-const db = require('./db.js');      // conexión a la BD
-const Hi = require('./models/item.js'); // modelo para la tabla 'hi' (Asegúrate de que este modelo exista)
+const cors = require('cors'); // ✅ CORRECCIÓN: Importación correcta de 'cors'
+const db = require('./db.js');      // Conexión a la BD (Sequelize)
+const Hi = require('./models/item.js'); // Modelo para la tabla 'hi'
 
-// 💡 CORRECCIÓN para Render: Usa la variable de entorno PORT, o 3000 por defecto (local)
+// Configuración del puerto
 const PORT = process.env.PORT || 3000; 
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // Habilita la lectura de cuerpos JSON
 
-// ✅ RUTA MÍNIMA para la raíz (Home)
+// ------------------------------------
+// ✅ RUTAS DE LA API
+// ------------------------------------
+
+// RUTA HOME
 app.get('/', (req, res) => {
     res.send('✅ Servidor Backend corriendo y listo para usar.');
 });
 
-// ✅ RUTA para obtener todos los registros de la tabla 'hi'
+// ✅ RUTA GET: Obtener todos los registros de la tabla 'hi' (Uso típico: /api/hi)
 app.get('/api/hi', async (req, res) => {
     try {
         const hi = await Hi.findAll();
@@ -26,11 +31,9 @@ app.get('/api/hi', async (req, res) => {
     }
 });
 
-// 🚀 NUEVA RUTA: Para ver los datos agregados (por convención, se usa GET)
-// Puedes acceder a esta ruta en Postman con un método GET a: [tu-url]/consulta
+// 🚀 RUTA GET: /consulta - Para ver los datos agregados (es un alias funcional de /api/hi)
 app.get('/consulta', async (req, res) => {
     try {
-        // Reutilizamos la lógica para obtener todos los registros
         const datosAgregados = await Hi.findAll();
         res.json({
             mensaje: 'Datos obtenidos de la tabla "hi"',
@@ -42,31 +45,41 @@ app.get('/consulta', async (req, res) => {
     }
 });
 
-// ✅ RUTA para crear un nuevo registro en la tabla 'hi'
+// ✅ RUTA POST: Crear un nuevo registro en la tabla 'hi' (Uso en Postman: /api/hi)
 app.post('/api/hi', async (req, res) => {
     try {
-        const { nombre } = req.body;      // coincide con el campo de tu tabla
+        const { nombre } = req.body;      // Extrae el campo 'nombre' del cuerpo JSON
+        
+        if (!nombre) {
+            return res.status(400).json({ error: 'El campo "nombre" es obligatorio.' });
+        }
+        
         const nuevo = await Hi.create({ nombre });
-        res.status(201).json(nuevo);
+        res.status(201).json(nuevo); // Retorna el nuevo registro creado
     } catch (error) {
         console.error('Error al crear registro:', error.message);
-        res.status(500).json({ error: 'Error al crear registro' });
+        res.status(500).json({ error: 'Error al crear registro', detail: error.message });
     }
 });
 
-// ✅ Conectar a la base de datos y levantar el servidor
+// ------------------------------------
+// ✅ CONEXIÓN A DB Y LEVANTAMIENTO DEL SERVIDOR
+// ------------------------------------
+
 (async () => {
     try {
+        // 1. Autenticar la conexión a la DB
         await db.authenticate();
         console.log('✅ Conexión a la base de datos exitosa');
         
-        // 💡 db.sync() debe estar aquí para crear o actualizar tablas
-        await db.sync({ alter: true }); // { alter: true } ajusta las tablas sin borrarlas (útil en desarrollo)
-        
-        // 🚀 Levantamiento del servidor
+        // 2. Sincronizar modelos con la DB (crea la tabla si no existe o aplica cambios)
+        await db.sync({ alter: true }); 
+        console.log('✅ Base de datos sincronizada');
+
+        // 3. Levantamiento del servidor
         app.listen(PORT, () => {
-            console.log(`Servidor corriendo en el puerto ${PORT}`);
-            console.log(`¡Servidor listo en Render! URL pública: [tu-url.onrender.com]`);
+            console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+            console.log(`URL de prueba (GET): http://localhost:${PORT}/consulta`);
         });
     } catch (err) {
         console.error('❌ Error de conexión o sincronización:', err.message);
